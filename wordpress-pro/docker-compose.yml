@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mysql:8.0 #downloads version 8.0 from docker hub
+    restart: always # if the container crashes automaticaly resart it 
+    env_file: .env #this load the variables from your env file
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - /mnt/mysql-data:/var/lib/mysql
+    networks:
+      - wordpress-network
+
+  wordpress:
+    image: wordpress:latest
+    restart: always
+    ports:
+      - "80:80"
+    env_file: .env
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - wordpress-network
+
+networks:
+  wordpress-network:
+    driver: bridge
