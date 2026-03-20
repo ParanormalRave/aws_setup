@@ -1,0 +1,46 @@
+Setting Up the AWS Architecture
+I started by setting up the AWS architecture. One of the first issues I ran into was a connection timeout, which I resolved by checking the inbound rules in the wordpress-sg security group and reconfiguring them correctly.
+
+Bash Provisioning Script
+After the AWS setup I moved on to writing the bash provisioning script, following the steps from the previous docker class documentation. Some issues I encountered here:
+
+I had trouble with the logic for setting up the configuration, which led me to write an if/else statement to handle both the Dockerfile and docker-compose file scenarios
+I forgot to update the program after installing it, which caused issues, learned that the hard way 
+I discovered a useful command: bash -n provision.sh which checks for syntax errors in a bash script without actually running it
+
+After running the provision script I hit a curl (28) error. After some research I found out it was likely a routing issue so I tried pinging — that didn't work either. I then headed to AWS Console → VPC → Route Table and discovered there was no subnet association attached to my router. I fixed that by going to the subnet association tab and attaching it to the one bearing my VPC.
+It still didn't work after that. More research revealed that the Docker download section needed HTTPS port access which I hadn't included in my security group. After adding that, the provision script worked perfectly.
+
+Connecting to the Instance Locally
+I had issues connecting my AWS setup to my local device via terminal. I had directly copied the SSH command without changing the filename and address, which gave me permission and access errors. Once I corrected the file name and target address it connected successfully.
+
+Setting Up .env and docker-compose.yml
+This was the most troublesome part of the project. I wanted to set up the environment in VS Code for easy editing and configuration, so I created the files inside a folder called wordpress-pro.
+
+The .env file has four lines and contains the MySQL structure that the Docker containers connect to
+The docker-compose.yml file allows the two containers which are MySQL and WordPress and allow them to communicate with each other
+
+
+EBS Volume
+The EBS volume was used for the MySQL database instead of container storage because it acts as a persistent disk where the data lives, mounted directly on the EC2 instance. This means if the instance is restarted or stopped, the data remains intact.
+
+Security Group Configuration
+I added the following inbound rules:
+
+SSH — to allow me to configure the instance from my terminal
+HTTP — to allow WordPress to be accessed from a browser
+HTTPS — to allow Docker to be installed online via the provision script (not explicitly required by the task but added because of the Docker installation step)
+
+There are no security risks with my current port configuration.
+
+Fault Tolerance & Scalability
+
+If the EC2 instance were to crash, the data would still be intact because of the EBS volume mounted to it
+If the application needed to handle 100x more users, the best solution would be a load balancer, it acts as an intermediary between the user and the server, stopping traffic from being sent to a crashed server and routing it to other active and stable ones instead
+
+
+Backup Script (backup.sh)
+For the backup script I was about 80% correct on the steps but wasn't confident on the exact commands. The 20% I got wrong was attempting to install MariaDB and redo the MySQL setup when a Docker container was already running and handling that.
+
+Live Packets
+One important thing I learned during provisioning was the importance of keepalive/live packets. I had a recurring issue with my terminal disconnecting from the cloud server during long operations. After research I discovered live packets.They send continuous signals to the server to let it know the SSH terminal is still active, preventing it from dropping the connection.
